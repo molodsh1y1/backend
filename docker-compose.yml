@@ -1,0 +1,45 @@
+name: ${PROJECT_NAME}
+
+x-services:
+  backend-base: &backend-base
+    image: ${PROJECT_NAME}-backend-base:latest
+    build:
+      context: .
+    volumes:
+      - ./app:/app
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+
+
+services:
+
+  backend:
+    <<: *backend-base
+    command: backend-local
+    ports:
+      - "${EXTERNAL_PORT_BACKEND}:8080"
+
+  postgres:
+    image: postgres:14
+    shm_size: 1g
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "${EXTERNAL_PORT_POSTGRES}:5432"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - POSTGRES_INITDB_ARGS=--auth-host=md5
+
+  redis:
+    image: "redis:6"
+    volumes:
+      - "redis_data:/data"
+
+volumes:
+  pg-data:
+  redis_data:
