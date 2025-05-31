@@ -20,7 +20,7 @@ services:
     <<: *backend-base
     command: backend-local
     ports:
-      - "${EXTERNAL_PORT_BACKEND}:8080"
+      - "${EXTERNAL_PORT_BACKEND}:8000"
 
   postgres:
     image: postgres:14

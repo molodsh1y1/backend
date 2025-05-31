@@ -22,7 +22,7 @@ if [ "$1" == 'backend' ]; then
         --workers 4 \
         --threads 16 \
         --worker-class gthread \
-        --bind 0.0.0.0:8080 \
+        --bind 0.0.0.0:8000 \
         --timeout 600 \
         --log-level info \
         --graceful-timeout 600
@@ -36,7 +36,7 @@ elif [ "$1" == 'backend-local' ]; then
        --workers 1 \
        --reload \
        --worker-class sync \
-       --bind 0.0.0.0:8080 \
+       --bind 0.0.0.0:8000 \
        --timeout 600 \
        --log-level info \
        --graceful-timeout 600
@@ -45,7 +45,7 @@ elif [ "$1" == 'websocket' ]; then
    echo "Websocket startup..."
 
    exec daphne ws:application \
-        -b 0.0.0.0 -p 8080
+        -b 0.0.0.0 -p 8000
 
 elif [ "$1" == 'test' ]; then
    exec pytest
