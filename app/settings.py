@@ -35,7 +35,6 @@ INSTALLED_APPS = [
 
     # auth
     'oauth2_provider',
-    'django.contrib.sites',
     'allauth',
     'allauth.account',
     "allauth.headless",
