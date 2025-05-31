@@ -12,6 +12,7 @@ prepare_app() {
 
 wait-for-it --service "$POSTGRES_LINK"
 wait-for-it --service "$REDIS_LINK"
+wait-for-it --service "$RABBIT_LINK"
 
 if [ "$1" == 'backend' ]; then
    prepare_app
@@ -49,6 +50,14 @@ elif [ "$1" == 'websocket' ]; then
 
 elif [ "$1" == 'test' ]; then
    exec pytest
+
+elif [ "$1" == 'worker-beat' ]; then
+   echo "Starting Celery beat..."
+   exec celery -A celery_app beat -l info
+
+elif [ "$1" == 'worker-scraper-raw-data' ]; then
+   echo "Starting Raw Data Scraper Celery worker..."
+   exec celery -A celery_app worker -Q scraper.raw-data -l info --concurrency=1 --prefetch-multiplier=1
 
 else
    echo 'No valid argument provided, defaulting to infinite sleep...'

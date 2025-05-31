@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+import urllib.parse
+
+from kombu import Queue, Exchange
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,7 +17,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['98.81.212.132', 'ec2-98-81-212-132.compute-1.amazonaws.com']
+ALLOWED_HOSTS = ['98.81.212.132', 'ec2-98-81-212-132.compute-1.amazonaws.com', '*']
 
 
 # Application definition
@@ -159,6 +162,25 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
+    'UNAUTHENTICATED_USER': None,
+    'TOKEN_MODEL': None,
+    'DEFAULT_PAGINATION_CLASS': None,
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ],
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -202,6 +224,11 @@ LOGGING = {
         "level": "DEBUG",
     },
     'loggers': {
+        'scraper.management.commands.scrape_raw_data': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'botocore': {
             'httpx': ['console'],
             'level': 'WARN',
@@ -209,6 +236,10 @@ LOGGING = {
         'urllib3': {
             'httpx': ['console'],
             'level': 'WARN',
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
         },
         'asyncio': {
             'httpx': ['console'],
@@ -233,3 +264,35 @@ CORE_AUTH_USE_FIXED_VERIFICATION_CODE = os.getenv('CORE_AUTH_USE_FIXED_VERIFICAT
 CORE_AUTH_PHONE_REGISTRATION_ENABLED = True
 CORE_AUTH_VERIFICATION_CODE_MAX_ATTEMPTS = 5
 CORE_AUTH_VERIFICATION_CODE_LENGTH = 6
+
+RABBIT_LINK = os.getenv('RABBIT_LINK')
+RABBIT_USER = os.getenv('RABBIT_USER')
+RABBIT_PASSWORD = os.getenv('RABBIT_PASSWORD')
+RABBIT_PORT = os.getenv('RABBIT_PORT', 5672)
+RABBIT_HOST = RABBIT_LINK.split(':')[0] if ':' in RABBIT_LINK else RABBIT_LINK
+
+CELERY_BROKER_URL = f'amqp://{RABBIT_USER}:{RABBIT_PASSWORD}@{RABBIT_LINK}/'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_LINK}'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BROKER_CONNECTION_RETRY=True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP=True
+CELERY_BROKER_CONNECTION_MAX_RETRIES=10
+
+CELERY_TASK_QUEUES = (
+    Queue(
+        'scraper.raw-data',
+        Exchange('scraper.raw-data'),
+        routing_key='scraper.raw-data',
+    ),
+)
+
+CELERY_TASK_ROUTES = {
+    'dip.tasks.scrape_raw_data': {
+        'queue': 'scraper.raw-data',
+        'routing_key': 'scraper.raw-data',
+    },
+}

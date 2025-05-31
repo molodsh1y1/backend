@@ -10,6 +10,7 @@ x-services:
     depends_on:
       - postgres
       - redis
+      - rabbitmq
     env_file:
       - .env
 
@@ -40,6 +41,26 @@ services:
     volumes:
       - "redis_data:/data"
 
+  worker-scraper-raw-data:
+    <<: *backend-base
+    command: worker-scraper-raw-data
+
+  worker-beat:
+    <<: *backend-base
+    command: worker-beat
+
+  rabbitmq:
+    image: docker.io/bitnami/rabbitmq:3.12.0-debian-11-r0
+    volumes:
+      - rabbitmq_data:/bitnami/rabbitmq/mnesia
+    environment:
+      - RABBITMQ_USER=${RABBIT_USER:-user}
+      - RABBITMQ_PASSWORD=${RABBIT_PASSWORD:-password}
+    ports:
+      - "${EXTERNAL_PORT_RABBITMQ:-5672}:5672"
+      - "${EXTERNAL_PORT_RABBITMQ_MANAGEMENT:-15672}:15672"
+
 volumes:
   pg-data:
   redis_data:
+  rabbitmq_data:
