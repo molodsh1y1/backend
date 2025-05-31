@@ -14,7 +14,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['98.81.212.132', 'ec2-98-81-212-132.compute-1.amazonaws.com']
 
 
 # Application definition
@@ -80,12 +80,18 @@ HEADLESS_ONLY = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
+    'http://98.81.212.132',
+    'http://ec2-98-81-212-132.compute-1.amazonaws.com',
 ]
 
 CORS_ALLOW_HEADERS = ("*", )
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = [
+    'http://98.81.212.132',
+    'http://ec2-98-81-212-132.compute-1.amazonaws.com',
+]
+
 
 TEMPLATES = [
     {
