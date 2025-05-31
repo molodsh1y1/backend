@@ -105,16 +105,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'asgi.application'
 
-REDIS_LINK = os.getenv('REDIS_LINK', 'redis:6379')
-CHANNEL_LAYERS = {
-    'default': {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        'CONFIG': {
-            "hosts": [(REDIS_LINK.split(':')[0], int(REDIS_LINK.split(':')[1]))],
-        },
-    },
-}
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -213,13 +203,6 @@ LOGGING = {
             'httpx': ['console'],
             'level': 'WARN',
         },
-    }
-}
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f'redis://{REDIS_LINK}',
     }
 }
 

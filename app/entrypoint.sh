@@ -11,7 +11,6 @@ prepare_app() {
 }
 
 wait-for-it --service "$POSTGRES_LINK"
-wait-for-it --service "$REDIS_LINK"
 
 if [ "$1" == 'backend' ]; then
    prepare_app

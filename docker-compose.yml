@@ -9,7 +9,6 @@ x-services:
       - ./app:/app
     depends_on:
       - postgres
-      - redis
     env_file:
       - .env
 
@@ -34,11 +33,6 @@ services:
     environment:
       - POSTGRES_HOST_AUTH_METHOD=md5
       - POSTGRES_INITDB_ARGS=--auth-host=md5
-
-  redis:
-    image: "redis:6"
-    volumes:
-      - "redis_data:/data"
 
 volumes:
   pg-data:

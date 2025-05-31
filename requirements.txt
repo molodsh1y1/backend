@@ -1,6 +1,5 @@
 aiobotocore==2.21.1
 channels[daphne]==4.2.2
-channels-redis==4.2.1
 django==5.2
 django-allauth[socialaccount]==65.7.0
 django-constance==4.3.2
