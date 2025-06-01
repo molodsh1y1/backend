@@ -22,7 +22,7 @@ class ScholarRawRecord(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     url = models.URLField(unique=True)
     publication_year = models.IntegerField(blank=True, null=True)
-    # authors = models.ManyToManyField('ScholarAuthor', blank=True, related_name='scholar_raw_records')
+    authors = models.ManyToManyField('ScholarAuthor', blank=True, related_name='scholar_raw_records')
     scraped_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

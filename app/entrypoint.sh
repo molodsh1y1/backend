@@ -57,7 +57,7 @@ elif [ "$1" == 'worker-beat' ]; then
 
 elif [ "$1" == 'worker-scraper-raw-data' ]; then
    echo "Starting Raw Data Scraper Celery worker..."
-   exec celery -A celery_app worker -Q scraper.raw-data -l info --concurrency=1 --prefetch-multiplier=1
+   exec celery -A celery_app worker -Q scraper.raw-data -l info --pool=solo --concurrency=1
 
 else
    echo 'No valid argument provided, defaulting to infinite sleep...'

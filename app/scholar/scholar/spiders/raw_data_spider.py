@@ -1,3 +1,4 @@
+import uuid
 import scrapy
 from asgiref.sync import sync_to_async
 from dip.models import Profile
@@ -23,7 +24,7 @@ class RawDataSpider(scrapy.Spider):
         # Hardcoded sample data
         item = ScholarItem()
         item['title'] = 'Sample Title'
-        item['url'] = 'https://example.com/sample-url'
+        item['url'] = f'https://example.com/sample-url{uuid.uuid4()}'
         item['publication_year'] = 2023
 
         # Directly yield the item instead of making a request
