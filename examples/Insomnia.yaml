@@ -1,0 +1,346 @@
+type: collection.insomnia.rest/5.0
+name: DIP
+meta:
+  id: wrk_046cd276b5424f85a7674f4c92c5dad7
+  created: 1748690820878
+  modified: 1748690820878
+collection:
+  - name: core auth
+    meta:
+      id: fld_58f6a54006b84c3ba06a82ffb97d98ec
+      created: 1748690898987
+      modified: 1748711069520
+      sortKey: -874855532534.5
+    children:
+      - url: "{{ _.base_url }}/api/v1/core/auth/registration_request/"
+        name: registration_request phone
+        meta:
+          id: req_d73bd0e77ce041e7b0a2255c4e0332b1
+          created: 1748690898991
+          modified: 1748705972316
+          isPrivate: false
+          sortKey: -1743158986393.3516
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "phone": "+3804231243",
+              "password": "123456b",
+              "first_name": "John",
+              "last_name": "Doe"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+          disabled: true
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/registration_confirm/"
+        name: registration_confirm phone
+        meta:
+          id: req_388e5dfed2364abb9b26252fd9f43f9c
+          created: 1748690898994
+          modified: 1748705977533
+          isPrivate: false
+          sortKey: -1741697095671.7031
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+3804231243",
+              "code": "000000"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+          disabled: true
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/login/"
+        name: login phone
+        meta:
+          id: req_dab3ba88ce6d42fcad1ec0a0314dca35
+          created: 1748690898998
+          modified: 1748711409673
+          isPrivate: false
+          sortKey: -1741667285646.961
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+3804231242",
+              "password": "123456b"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+          disabled: true
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/password_reset_request/"
+        name: password_reset_request phone
+        meta:
+          id: req_aee39e27be0245318de4ccf4e0b42bab
+          created: 1748690899010
+          modified: 1748690899010
+          isPrivate: false
+          sortKey: -1741637475622.2188
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+3804231242"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+          disabled: true
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/password_reset_confirm/"
+        name: password_reset_confirm phone
+        meta:
+          id: req_ae2cd8019a614bb7b60d6f55851a807a
+          created: 1748690899011
+          modified: 1748692549487
+          isPrivate: false
+          sortKey: -1741577855572.7344
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+3804231242",
+            	"code": "000000",
+            	"new_password": "123456b"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+          disabled: true
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/change_contact_request/"
+        name: change_contact_request phone
+        meta:
+          id: req_4f330cbbc4ad44fca9dd09f6869de279
+          created: 1748690899012
+          modified: 1748690990249
+          isPrivate: false
+          sortKey: -1741548045547.9922
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+1234567891"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/change_contact_confirm/"
+        name: change_contact_confirm phone
+        meta:
+          id: req_8afd9c5564ba4dd5884a6a3fc86ddcc7
+          created: 1748690899013
+          modified: 1748690899013
+          isPrivate: false
+          sortKey: -1741533140535.621
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "phone": "+1234567891",
+              "code": "0786"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ _.token }}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/core/auth/refresh_token/"
+        name: refresh_token
+        meta:
+          id: req_25ad62c3adfd4390812d7a4a6d18c690
+          created: 1748690899016
+          modified: 1748691026881
+          isPrivate: false
+          sortKey: -1741533140435.621
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"refresh_token": "oiJDygDbnJLdw0tEiwYjQrJA8XNfocBXhe8qdcZtBzU"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: scrape raw
+    meta:
+      id: fld_93411582e1fb4d3ba11befde151fca99
+      created: 1748711064869
+      modified: 1748711068534
+      sortKey: -874855532434.5
+    children:
+      - url: "{{ _.base_url }}/api/v1/raw-scraper/scrape/"
+        name: scrape raw data
+        meta:
+          id: req_32c0bec1327c4b8eb800b96a97929b94
+          created: 1748711071560
+          modified: 1748711566279
+          isPrivate: false
+          sortKey: -1748711071560
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"query": "some text"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_425bab2b096f86e9dbc5a019af9ccbdcbb04e477
+    created: 1748690820889
+    modified: 1748690820889
+environments:
+  name: Base Environment
+  meta:
+    id: env_425bab2b096f86e9dbc5a019af9ccbdcbb04e477
+    created: 1748690820886
+    modified: 1748692506462
+    isPrivate: false
+  data:
+    base_url: http://localhost:8000
+    ws_url: ws://localhost:13382
+    token: YQSrOG7DMfnIUuUn0i07fFcbvrY08h8rOPGevCNgKtU
+  subEnvironments:
+    - name: local
+      meta:
+        id: env_c63f348f8dea42e4b0485813319aa9a3
+        created: 1748692457324
+        modified: 1748711421748
+        isPrivate: false
+        sortKey: 1748692457324
+      data:
+        base_url: http://localhost:8000
+        ws_url: ws://localhost:13382
+        token: k9MbQI6nLf-QFmk8XvPM52YlWshIR7DE3d-_6TDZUGw
+      color: "#ffffff"
+    - name: prod
+      meta:
+        id: env_a770fdf5325345fca342a7c2d34d7c66
+        created: 1748704491529
+        modified: 1748704552790
+        isPrivate: false
+        sortKey: 1748704491529
+      data:
+        base_url: http://98.81.212.132:8000
+        ws_url: ws://98.81.212.132:13382
+        token: YQSrOG7DMfnIUuUn0i07fFcbvrY08h8rOPGevCNgKtU
+      color: "#edc602"
