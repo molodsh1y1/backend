@@ -82,18 +82,17 @@ HEADLESS_ONLY = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
-    'http://3.91.27.109',
-    'http://ec2-3.91.27.109.compute-1.amazonaws.com',
+    'http://18.234.82.207',
+    'http://ec2-18.234.82.207.compute-1.amazonaws.com',
 ]
 
 CORS_ALLOW_HEADERS = ("*", )
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://3.91.27.109',
-    'http://ec2-3.91.27.109.compute-1.amazonaws.com',
+    'http://18.234.82.207',
+    'http://ec2-18.234.82.207.compute-1.amazonaws.com',
 ]
-
 
 TEMPLATES = [
     {
