@@ -19,7 +19,7 @@ class Profile(models.Model):
 
 class ScholarRawRecord(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, blank=True, null=True, related_name='scholar_raw_records')
-    semantic_scholar_id = models.CharField(max_length=100, unique=True)
+    semantic_scholar_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     title = models.CharField(max_length=1000, blank=True, null=True)
     abstract = models.TextField(blank=True, null=True)
     publication_year = models.IntegerField(blank=True, null=True)

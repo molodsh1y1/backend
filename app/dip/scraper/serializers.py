@@ -1,5 +1,5 @@
-from rest_framework import serializers
 from dip.exceptions import CustomErrorSerializerMixin
+from rest_framework import serializers
 
 
 class ScraperInputSerializer(CustomErrorSerializerMixin, serializers.Serializer):
