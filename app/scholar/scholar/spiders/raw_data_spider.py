@@ -2,6 +2,7 @@ import logging
 from typing import Optional, List, Dict, Any
 import scrapy
 from scrapy import signals
+from asgiref.sync import sync_to_async
 from dip.models import Profile
 from scholar.scholar.items import ScholarItem
 from dip.clients.semantic_scholar import SemanticScholarAPI
@@ -59,7 +60,7 @@ class RawDataSpider(scrapy.Spider):
         """Start the scraping process without HTTP requests"""
         return []
 
-    def start(self):
+    async def start(self):
         """Override start method to process API data directly"""
         try:
             logger.info("Starting paper search via Semantic Scholar API")
@@ -79,7 +80,7 @@ class RawDataSpider(scrapy.Spider):
 
             for paper_data in papers:
                 try:
-                    item = self.create_scholar_item(paper_data)
+                    item = await self.create_scholar_item(paper_data)
                     if item:
                         self.papers_processed += 1
                         yield item
@@ -93,7 +94,7 @@ class RawDataSpider(scrapy.Spider):
             logger.error(f"Error in paper search: {e}")
             raise
 
-    def create_scholar_item(self, paper_data: Dict[str, Any]) -> Optional[ScholarItem]:
+    async def create_scholar_item(self, paper_data: Dict[str, Any]) -> Optional[ScholarItem]:
         """Convert API response to ScholarItem"""
         try:
             if not paper_data.get('paperId') or not paper_data.get('title'):
@@ -145,7 +146,7 @@ class RawDataSpider(scrapy.Spider):
 
             if self.profile_id:
                 try:
-                    profile = Profile.objects.get(id=self.profile_id)
+                    profile = await sync_to_async(Profile.objects.get)(id=self.profile_id)
                     item['profile'] = profile
                 except Profile.DoesNotExist:
                     logger.warning(f"Profile with ID {self.profile_id} not found")
