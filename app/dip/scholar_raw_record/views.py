@@ -192,10 +192,13 @@ class ScholarRawRecordViewSet(viewsets.ModelViewSet):
             cell.font = header_font
             cell.fill = header_fill
 
-        # Write data
         for row, paper in enumerate(queryset, 2):
             authors_list = [author.full_name for author in paper.authors.all()]
             authors_str = "; ".join(authors_list)
+
+            # Convert timezone-aware datetimes to naive datetimes for Excel
+            scraped_at_naive = paper.scraped_at.replace(tzinfo=None) if paper.scraped_at else None
+            updated_at_naive = paper.updated_at.replace(tzinfo=None) if paper.updated_at else None
 
             data = [
                 paper.id,
@@ -213,8 +216,8 @@ class ScholarRawRecordViewSet(viewsets.ModelViewSet):
                 'Yes' if paper.is_open_access else 'No',
                 authors_str,
                 len(authors_list),
-                paper.scraped_at,
-                paper.updated_at
+                scraped_at_naive,
+                updated_at_naive
             ]
 
             for col, value in enumerate(data, 1):
