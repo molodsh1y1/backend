@@ -23,3 +23,4 @@ wait-for-it==2.3.0
 scrapy==2.13.1
 celery==5.5.2
 scrapy-djangoitem==1.1.1
+openpyxl==3.1.2
