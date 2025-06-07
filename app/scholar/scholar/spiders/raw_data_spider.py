@@ -1,31 +1,211 @@
-import uuid
+import logging
+from typing import Optional, List, Dict, Any
 import scrapy
-from asgiref.sync import sync_to_async
+from scrapy import signals
 from dip.models import Profile
 from scholar.scholar.items import ScholarItem
+from dip.semantic_scholar_client import SemanticScholarAPI
+
+logger = logging.getLogger(__name__)
 
 
 class RawDataSpider(scrapy.Spider):
     name = 'raw_data_spider'
-    allowed_domains = ['scholar.google.com']
-    start_urls = ['https://scholar.google.com']
 
-    def __init__(self, query, year_from=None, year_to=None, profile_id=1, *args, **kwargs):
+    # No domains needed since we're using API
+    allowed_domains = []
+    start_urls = []
+
+    def __init__(self,
+                 query: str,
+                 year_from: Optional[int] = None,
+                 year_to: Optional[int] = None,
+                 limit: int = 100,
+                 fields_of_study: Optional[List[str]] = None,
+                 publication_types: Optional[List[str]] = None,
+                 min_citation_count: Optional[int] = None,
+                 open_access_only: bool = False,
+                 profile_id: Optional[int] = None,
+                 *args, **kwargs):
+
         super().__init__(*args, **kwargs)
+
+        # Store search parameters
         self.query = query
-        self.year_from = year_from
-        self.year_to = year_to
+        self.year_from = int(year_from) if year_from else None
+        self.year_to = int(year_to) if year_to else None
+        self.limit = int(limit) if limit else 100
+        self.fields_of_study = fields_of_study or []
+        self.publication_types = publication_types or []
+        self.min_citation_count = int(min_citation_count) if min_citation_count else None
+        self.open_access_only = bool(open_access_only)
+        self.profile_id = int(profile_id) if profile_id else None
 
-    def parse(self, response):
-        self.logger.info(f'Query: {self.query}')
-        self.logger.info(f'Year From: {self.year_from}')
-        self.logger.info(f'Year To: {self.year_to}')
+        # Initialize API client
+        self.api_client = SemanticScholarAPI()
 
-        # Hardcoded sample data
-        item = ScholarItem()
-        item['title'] = 'Sample Title'
-        item['url'] = f'https://example.com/sample-url{uuid.uuid4()}'
-        item['publication_year'] = 2023
+        # Statistics
+        self.papers_processed = 0
+        self.papers_saved = 0
+        self.errors_count = 0
 
-        # Directly yield the item instead of making a request
-        yield item
+        logger.info(f"Spider initialized with parameters:")
+        logger.info(f"  Query: {self.query}")
+        logger.info(f"  Year range: {self.year_from} - {self.year_to}")
+        logger.info(f"  Limit: {self.limit}")
+        logger.info(f"  Fields of study: {self.fields_of_study}")
+        logger.info(f"  Publication types: {self.publication_types}")
+        logger.info(f"  Min citations: {self.min_citation_count}")
+        logger.info(f"  Open access only: {self.open_access_only}")
+        logger.info(f"  Profile ID: {self.profile_id}")
+
+    def start_requests(self):
+        """Generate initial request - we'll use this to trigger the API calls"""
+        # Create a dummy request since we're using API instead of web scraping
+        yield scrapy.Request(
+            url="https://api.semanticscholar.org",  # Dummy URL
+            callback=self.search_papers,
+            dont_filter=True
+        )
+
+    def search_papers(self, response):
+        """Search papers using Semantic Scholar API"""
+        try:
+            logger.info("Starting paper search via Semantic Scholar API")
+
+            # Use the API client to search for papers
+            papers = self.api_client.search_multiple_pages(
+                query=self.query,
+                total_limit=self.limit,
+                year_from=self.year_from,
+                year_to=self.year_to,
+                fields_of_study=self.fields_of_study,
+                publication_types=self.publication_types,
+                min_citation_count=self.min_citation_count,
+                open_access_only=self.open_access_only
+            )
+
+            logger.info(f"Found {len(papers)} papers from API")
+
+            # Process each paper
+            for paper_data in papers:
+                try:
+                    item = self.create_scholar_item(paper_data)
+                    if item:
+                        self.papers_processed += 1
+                        yield item
+
+                except Exception as e:
+                    self.errors_count += 1
+                    logger.error(f"Error processing paper {paper_data.get('paperId', 'unknown')}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error in paper search: {e}")
+            raise
+
+    def create_scholar_item(self, paper_data: Dict[str, Any]) -> Optional[ScholarItem]:
+        """Convert API response to ScholarItem"""
+        try:
+            # Skip papers without required data
+            if not paper_data.get('paperId') or not paper_data.get('title'):
+                logger.warning(f"Skipping paper without paperId or title: {paper_data}")
+                return None
+
+            item = ScholarItem()
+
+            # Basic information
+            item['semantic_scholar_id'] = paper_data['paperId']
+            item['title'] = paper_data.get('title', '').strip()
+            item['abstract'] = paper_data.get('abstract', '') or ''
+            item['publication_year'] = paper_data.get('year')
+            item['venue'] = paper_data.get('venue', '') or ''
+
+            # URLs and identifiers
+            item['url'] = f"https://www.semanticscholar.org/paper/{paper_data['paperId']}"
+
+            # Handle PDF URL
+            open_access_pdf = paper_data.get('openAccessPdf')
+            if open_access_pdf and isinstance(open_access_pdf, dict):
+                item['pdf_url'] = open_access_pdf.get('url', '')
+            else:
+                item['pdf_url'] = ''
+
+            # DOI from externalIds
+            external_ids = paper_data.get('externalIds') or {}
+            item['doi'] = external_ids.get('DOI', '') or ''
+
+            # Metrics
+            item['citation_count'] = paper_data.get('citationCount', 0) or 0
+            item['reference_count'] = paper_data.get('referenceCount', 0) or 0
+            item['influential_citation_count'] = paper_data.get('influentialCitationCount', 0) or 0
+
+            # Open access status
+            item['is_open_access'] = bool(paper_data.get('isOpenAccess', False))
+
+            # Profile association
+            if self.profile_id:
+                try:
+                    profile = Profile.objects.get(id=self.profile_id)
+                    item['profile'] = profile
+                except Profile.DoesNotExist:
+                    logger.warning(f"Profile with ID {self.profile_id} not found")
+                    item['profile'] = None
+            else:
+                item['profile'] = None
+
+            logger.debug(f"Created item for paper: {item['title'][:50]}...")
+            return item
+
+        except Exception as e:
+            logger.error(f"Error creating item for paper {paper_data.get('paperId')}: {e}")
+            return None
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        """Create spider instance and connect signals"""
+        spider = cls(*args, **kwargs)
+        crawler.signals.connect(spider.spider_closed, signal=signals.spider_closed)
+        return spider
+
+    def spider_closed(self, spider):
+        """Log statistics when spider closes"""
+        logger.info("=" * 50)
+        logger.info("SPIDER STATISTICS")
+        logger.info("=" * 50)
+        logger.info(f"Query: {self.query}")
+        logger.info(f"Papers processed: {self.papers_processed}")
+        logger.info(f"Papers saved: {self.papers_saved}")
+        logger.info(f"Errors: {self.errors_count}")
+        logger.info(
+            f"Success rate: {(self.papers_processed / max(1, self.papers_processed + self.errors_count)) * 100:.1f}%")
+        logger.info("=" * 50)
+
+
+# Helper class for handling author data (for future use)
+class AuthorProcessor:
+    """Helper class to process author data from Semantic Scholar"""
+
+    @staticmethod
+    def process_authors(authors_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process author data from API response"""
+        processed_authors = []
+
+        for author in authors_data or []:
+            if not author.get('authorId'):
+                continue
+
+            author_data = {
+                'semantic_scholar_id': author['authorId'],
+                'full_name': author.get('name', '') or '',
+                'url': f"https://www.semanticscholar.org/author/{author['authorId']}",
+                # Additional fields can be populated with separate API call
+                'h_index': None,
+                'paper_count': 0,
+                'citation_count': 0,
+                'affiliations': []
+            }
+
+            processed_authors.append(author_data)
+
+        return processed_authors
