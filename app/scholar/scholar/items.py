@@ -1,6 +1,5 @@
 import scrapy
 
-
 class ScholarItem(scrapy.Item):
     semantic_scholar_id = scrapy.Field()
     title = scrapy.Field()
@@ -15,4 +14,5 @@ class ScholarItem(scrapy.Item):
     influential_citation_count = scrapy.Field()
     is_open_access = scrapy.Field()
     profile = scrapy.Field()
+    session_id = scrapy.Field()
     authors_data = scrapy.Field()

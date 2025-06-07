@@ -17,7 +17,7 @@ collection:
         meta:
           id: req_d73bd0e77ce041e7b0a2255c4e0332b1
           created: 1748690898991
-          modified: 1748705972316
+          modified: 1749326801390
           isPrivate: false
           sortKey: -1743158986393.3516
         method: POST
@@ -25,7 +25,7 @@ collection:
           mimeType: application/json
           text: |
             {
-              "phone": "+3804231243",
+              "phone": "+3804231245",
               "password": "123456b",
               "first_name": "John",
               "last_name": "Doe"
@@ -51,7 +51,7 @@ collection:
         meta:
           id: req_388e5dfed2364abb9b26252fd9f43f9c
           created: 1748690898994
-          modified: 1748705977533
+          modified: 1749326814409
           isPrivate: false
           sortKey: -1741697095671.7031
         method: POST
@@ -59,7 +59,7 @@ collection:
           mimeType: application/json
           text: |-
             {
-              "phone": "+3804231243",
+              "phone": "+3804231245",
               "code": "000000"
             }
         headers:
@@ -83,7 +83,7 @@ collection:
         meta:
           id: req_dab3ba88ce6d42fcad1ec0a0314dca35
           created: 1748690898998
-          modified: 1748711409673
+          modified: 1749326805576
           isPrivate: false
           sortKey: -1741667285646.961
         method: POST
@@ -91,7 +91,7 @@ collection:
           mimeType: application/json
           text: |-
             {
-              "phone": "+3804231242",
+              "phone": "+3804231245",
               "password": "123456b"
             }
         headers:
@@ -275,15 +275,22 @@ collection:
         meta:
           id: req_32c0bec1327c4b8eb800b96a97929b94
           created: 1748711071560
-          modified: 1748711566279
+          modified: 1749333965220
           isPrivate: false
-          sortKey: -1748711071560
+          sortKey: -1749328781622
         method: POST
         body:
           mimeType: application/json
-          text: |-
+          text: >-
             {
-            	"query": "some text"
+              "query": "artificial intelligence machine learning deep neural networks",
+              "year_from": 2017,
+              "year_to": 2019,
+              "limit": 10,
+              "fields_of_study": ["Computer Science", "Mathematics", "Engineering"],
+              "publication_types": ["JournalArticle", "Conference", "Review"],
+              "min_citation_count": 15,
+              "open_access_only": true
             }
         headers:
           - name: Content-Type
@@ -302,6 +309,203 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/raw-scraper/filter-options/"
+        name: list filter options
+        meta:
+          id: req_38080f5391b547d49aae85411ba3f142
+          created: 1749324331022
+          modified: 1749325197560
+          isPrivate: false
+          sortKey: -1749324331022
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scholar-raw-record/"
+        name: list of scraped data
+        meta:
+          id: req_5c78bc748a9d40c2b670ed012a0f1095
+          created: 1749328781522
+          modified: 1749334564019
+          isPrivate: false
+          sortKey: -1749328781522
+        method: GET
+        parameters:
+          - id: pair_0820226b300f40e18b6677a2e76f0ba9
+            name: session_id
+            value: "36"
+            disabled: false
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scholar-raw-record/results/export-csv/"
+        name: export-csv
+        meta:
+          id: req_ffc9bdddc959403484c2eed7ebbe5b47
+          created: 1749330231990
+          modified: 1749334588268
+          isPrivate: false
+          sortKey: -1748655960021.5
+        method: GET
+        body:
+          mimeType: application/json
+        parameters:
+          - id: pair_0511ddb849b34731945b3a78751cd76f
+            name: session_id
+            value: "36"
+            disabled: false
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scholar-raw-record/results/export-excel/ "
+        name: export-excel
+        meta:
+          id: req_f4c6557be9514517af4c3a428425968d
+          created: 1749330239364
+          modified: 1749334613836
+          isPrivate: false
+          sortKey: -1748628404252.25
+        method: GET
+        body:
+          mimeType: application/json
+        parameters:
+          - id: pair_3edc8b08d1254698a37f66d8ca98b534
+            name: session_id
+            value: "36"
+            disabled: false
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scholar-raw-record/results/export-authors-csv/"
+        name: export-authors-csv
+        meta:
+          id: req_d78331b691a24ced985777f61d40b6ee
+          created: 1749330250663
+          modified: 1749334607565
+          isPrivate: false
+          sortKey: -1748642182136.875
+        method: GET
+        body:
+          mimeType: application/json
+        parameters:
+          - id: pair_8e38c3e9f2ca4aa2a16a66e61252bcdf
+            name: session_id
+            value: "36"
+            disabled: false
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url
+          }}/api/v1/scholar-raw-record/data-ready?last_check=2025-01-15T10:30:0\
+          0Z"
+        name: polling
+        meta:
+          id: req_3bfd8dfb91c34061addcaca2fd4d8d1b
+          created: 1749333357917
+          modified: 1749334551992
+          isPrivate: false
+          sortKey: -1749328781572
+        method: GET
+        body:
+          mimeType: application/json
+        parameters:
+          - id: pair_8d6237cb9790444bb1c2282546cd7783
+            name: task_id
+            value: 158f10c4-6397-47b3-8208-eb5a6d14e519
+            disabled: false
+          - id: pair_721ff9fa7d4c4ea89f0b844dbf75b71b
+            name: session_id
+            value: "36"
+            disabled: false
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: WS
+    meta:
+      id: fld_c760e19baf1a4be199c845d82bbb8a81
+      created: 1749152615804
+      modified: 1749152615804
+      sortKey: -1749152615804
 cookieJar:
   name: Default Jar
   meta:
@@ -324,23 +528,23 @@ environments:
       meta:
         id: env_c63f348f8dea42e4b0485813319aa9a3
         created: 1748692457324
-        modified: 1748711421748
+        modified: 1749326833047
         isPrivate: false
         sortKey: 1748692457324
       data:
         base_url: http://localhost:8000
-        ws_url: ws://localhost:13382
-        token: k9MbQI6nLf-QFmk8XvPM52YlWshIR7DE3d-_6TDZUGw
+        ws_url: ws://localhost:8001/ws
+        token: oESkFU3oHy3XPmRCm1DPkeMZwg0MGRCPWdHQJqI1WZw
       color: "#ffffff"
     - name: prod
       meta:
         id: env_a770fdf5325345fca342a7c2d34d7c66
         created: 1748704491529
-        modified: 1748704552790
+        modified: 1748881252166
         isPrivate: false
         sortKey: 1748704491529
       data:
-        base_url: http://98.81.212.132:8000
-        ws_url: ws://98.81.212.132:13382
+        base_url: http://3.91.27.109:8000
+        ws_url: ws://3.91.27.109:13382
         token: YQSrOG7DMfnIUuUn0i07fFcbvrY08h8rOPGevCNgKtU
       color: "#edc602"

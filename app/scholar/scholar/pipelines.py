@@ -1,42 +1,40 @@
 import logging
 from typing import Dict, Any
-
 from asgiref.sync import sync_to_async
 from django.db import transaction
 from dip.models import ScholarRawRecord, ScholarAuthor
 
 logger = logging.getLogger(__name__)
 
-
 class ScholarPipeline:
     async def process_item(self, item: Dict[str, Any], spider):
-        """
-        Save ScholarItem to database with proper author relationships
-        """
         try:
-            # Extract authors data before creating the record
             authors_data = item.pop('authors_data', [])
+            session_id = item.pop('session_id', None)
 
-            # Create or update the paper record using sync_to_async
+            paper_defaults = {
+                'title': item.get('title', ''),
+                'abstract': item.get('abstract', ''),
+                'publication_year': item.get('publication_year'),
+                'venue': item.get('venue', ''),
+                'doi': item.get('doi', ''),
+                'url': item.get('url', ''),
+                'pdf_url': item.get('pdf_url', ''),
+                'citation_count': item.get('citation_count', 0),
+                'reference_count': item.get('reference_count', 0),
+                'influential_citation_count': item.get('influential_citation_count', 0),
+                'is_open_access': item.get('is_open_access', False),
+                'profile': item.get('profile'),
+            }
+
+            if session_id:
+                paper_defaults['scraping_session_id'] = session_id
+
             paper, created = await sync_to_async(ScholarRawRecord.objects.update_or_create)(
                 semantic_scholar_id=item['semantic_scholar_id'],
-                defaults={
-                    'title': item.get('title', ''),
-                    'abstract': item.get('abstract', ''),
-                    'publication_year': item.get('publication_year'),
-                    'venue': item.get('venue', ''),
-                    'doi': item.get('doi', ''),
-                    'url': item.get('url', ''),
-                    'pdf_url': item.get('pdf_url', ''),
-                    'citation_count': item.get('citation_count', 0),
-                    'reference_count': item.get('reference_count', 0),
-                    'influential_citation_count': item.get('influential_citation_count', 0),
-                    'is_open_access': item.get('is_open_access', False),
-                    'profile': item.get('profile'),
-                }
+                defaults=paper_defaults
             )
 
-            # Process authors
             if authors_data:
                 authors = []
                 for author_data in authors_data:
@@ -56,16 +54,12 @@ class ScholarPipeline:
                     )
                     authors.append(author)
 
-                    if author_created:
-                        logger.debug(f"Created new author: {author.full_name}")
-
-                # Set many-to-many relationships using sync_to_async
                 await sync_to_async(paper.authors.set)(authors)
 
             action = "Created" if created else "Updated"
-            logger.info(f"{action} paper: {paper.title[:50]}... (ID: {paper.semantic_scholar_id})")
+            session_info = f" (Session: {session_id})" if session_id else ""
+            logger.info(f"{action} paper: {paper.title[:50]}... {session_info}")
 
-            # Update spider statistics
             if hasattr(spider, 'papers_saved'):
                 spider.papers_saved += 1
 

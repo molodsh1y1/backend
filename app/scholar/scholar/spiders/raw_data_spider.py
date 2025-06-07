@@ -9,10 +9,8 @@ from dip.clients.semantic_scholar import SemanticScholarAPI
 
 logger = logging.getLogger(__name__)
 
-
 class RawDataSpider(scrapy.Spider):
     name = 'raw_data_spider'
-
     allowed_domains = []
     start_urls = []
 
@@ -26,6 +24,7 @@ class RawDataSpider(scrapy.Spider):
                  min_citation_count: Optional[int] = None,
                  open_access_only: bool = False,
                  profile_id: Optional[int] = None,
+                 session_id: Optional[int] = None,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -39,29 +38,19 @@ class RawDataSpider(scrapy.Spider):
         self.min_citation_count = int(min_citation_count) if min_citation_count else None
         self.open_access_only = bool(open_access_only)
         self.profile_id = int(profile_id) if profile_id else None
+        self.session_id = int(session_id) if session_id else None
 
         self.api_client = SemanticScholarAPI()
-
         self.papers_processed = 0
         self.papers_saved = 0
         self.errors_count = 0
 
-        logger.info(f"Spider initialized with parameters:")
-        logger.info(f"  Query: {self.query}")
-        logger.info(f"  Year range: {self.year_from} - {self.year_to}")
-        logger.info(f"  Limit: {self.limit}")
-        logger.info(f"  Fields of study: {self.fields_of_study}")
-        logger.info(f"  Publication types: {self.publication_types}")
-        logger.info(f"  Min citations: {self.min_citation_count}")
-        logger.info(f"  Open access only: {self.open_access_only}")
-        logger.info(f"  Profile ID: {self.profile_id}")
+        logger.info(f"Spider initialized: query={self.query}, session_id={self.session_id}")
 
     def start_requests(self):
-        """Start the scraping process without HTTP requests"""
         return []
 
     async def start(self):
-        """Override start method to process API data directly"""
         try:
             logger.info("Starting paper search via Semantic Scholar API")
 
@@ -84,7 +73,6 @@ class RawDataSpider(scrapy.Spider):
                     if item:
                         self.papers_processed += 1
                         yield item
-
                 except Exception as e:
                     self.errors_count += 1
                     logger.error(f"Error processing paper {paper_data.get('paperId', 'unknown')}: {e}")
@@ -95,10 +83,8 @@ class RawDataSpider(scrapy.Spider):
             raise
 
     async def create_scholar_item(self, paper_data: Dict[str, Any]) -> Optional[ScholarItem]:
-        """Convert API response to ScholarItem"""
         try:
             if not paper_data.get('paperId') or not paper_data.get('title'):
-                logger.warning(f"Skipping paper without paperId or title: {paper_data}")
                 return None
 
             item = ScholarItem()
@@ -108,7 +94,6 @@ class RawDataSpider(scrapy.Spider):
             item['abstract'] = paper_data.get('abstract', '') or ''
             item['publication_year'] = paper_data.get('year')
             item['venue'] = paper_data.get('venue', '') or ''
-
             item['url'] = f"https://www.semanticscholar.org/paper/{paper_data['paperId']}"
 
             open_access_pdf = paper_data.get('openAccessPdf')
@@ -123,7 +108,6 @@ class RawDataSpider(scrapy.Spider):
             item['citation_count'] = paper_data.get('citationCount', 0) or 0
             item['reference_count'] = paper_data.get('referenceCount', 0) or 0
             item['influential_citation_count'] = paper_data.get('influentialCitationCount', 0) or 0
-
             item['is_open_access'] = bool(paper_data.get('isOpenAccess', False))
 
             authors_data = []
@@ -143,18 +127,17 @@ class RawDataSpider(scrapy.Spider):
                 authors_data.append(author_data)
 
             item['authors_data'] = authors_data
+            item['session_id'] = self.session_id
 
             if self.profile_id:
                 try:
                     profile = await sync_to_async(Profile.objects.get)(id=self.profile_id)
                     item['profile'] = profile
                 except Profile.DoesNotExist:
-                    logger.warning(f"Profile with ID {self.profile_id} not found")
                     item['profile'] = None
             else:
                 item['profile'] = None
 
-            logger.debug(f"Created item for paper: {item['title'][:50]}...")
             return item
 
         except Exception as e:
@@ -163,47 +146,9 @@ class RawDataSpider(scrapy.Spider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        """Create spider instance and connect signals"""
         spider = cls(*args, **kwargs)
         crawler.signals.connect(spider.spider_closed, signal=signals.spider_closed)
         return spider
 
     def spider_closed(self, spider):
-        """Log statistics when spider closes"""
-        logger.info("=" * 50)
-        logger.info("SPIDER STATISTICS")
-        logger.info("=" * 50)
-        logger.info(f"Query: {self.query}")
-        logger.info(f"Papers processed: {self.papers_processed}")
-        logger.info(f"Papers saved: {self.papers_saved}")
-        logger.info(f"Errors: {self.errors_count}")
-        logger.info(
-            f"Success rate: {(self.papers_processed / max(1, self.papers_processed + self.errors_count)) * 100:.1f}%")
-        logger.info("=" * 50)
-
-
-class AuthorProcessor:
-    """Helper class to process author data from Semantic Scholar"""
-
-    @staticmethod
-    def process_authors(authors_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process author data from API response"""
-        processed_authors = []
-
-        for author in authors_data or []:
-            if not author.get('authorId'):
-                continue
-
-            author_data = {
-                'semantic_scholar_id': author['authorId'],
-                'full_name': author.get('name', '') or '',
-                'url': f"https://www.semanticscholar.org/author/{author['authorId']}",
-                'h_index': None,
-                'paper_count': 0,
-                'citation_count': 0,
-                'affiliations': []
-            }
-
-            processed_authors.append(author_data)
-
-        return processed_authors
+        logger.info(f"SPIDER CLOSED - Query: {self.query}, Papers: {self.papers_processed}, Saved: {self.papers_saved}, Errors: {self.errors_count}")

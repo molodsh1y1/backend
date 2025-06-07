@@ -1,3 +1,4 @@
+# dip/tasks.py - оновлена версія
 import subprocess
 import logging
 import json
@@ -9,7 +10,8 @@ logger = logging.getLogger(__name__)
 @shared_task
 def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
                     fields_of_study=None, publication_types=None,
-                    min_citation_count=None, open_access_only=False, profile_id=None):
+                    min_citation_count=None, open_access_only=False, 
+                    profile_id=None, session_id=None):
     logger.info(f"Запускаємо Scrapy з параметрами:")
     logger.info(f"  query={query}")
     logger.info(f"  year_from={year_from}, year_to={year_to}")
@@ -19,6 +21,7 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
     logger.info(f"  min_citation_count={min_citation_count}")
     logger.info(f"  open_access_only={open_access_only}")
     logger.info(f"  profile_id={profile_id}")
+    logger.info(f"  session_id={session_id}")
 
     cmd = ['python', 'manage.py', 'scrape_raw_data']
 
@@ -33,6 +36,8 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
         cmd += ['--limit', str(limit)]
     if profile_id:
         cmd += ['--profile_id', str(profile_id)]
+    if session_id:  # Передаємо session_id до команди
+        cmd += ['--session_id', str(session_id)]
 
     # Додаткові параметри (передаємо як JSON)
     if fields_of_study:
@@ -54,7 +59,8 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
             "status": "success",
             "message": "Scraping completed successfully",
             "query": query,
-            "profile_id": profile_id
+            "profile_id": profile_id,
+            "session_id": session_id  # Повертаємо session_id в результаті
         }
 
     except subprocess.CalledProcessError as e:
@@ -67,5 +73,6 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
             "message": f"Scraping failed with return code {e.returncode}",
             "error": e.stderr,
             "query": query,
-            "profile_id": profile_id
+            "profile_id": profile_id,
+            "session_id": session_id
         }

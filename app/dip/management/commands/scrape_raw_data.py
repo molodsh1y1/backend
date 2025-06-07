@@ -1,3 +1,4 @@
+# dip/management/commands/scrape_raw_data.py - оновлена версія
 import logging
 import json
 
@@ -17,28 +18,26 @@ class Command(BaseCommand):
     help = 'Scrape raw data from Semantic Scholar API with specified parameters.'
 
     def add_arguments(self, parser):
-        # Основні параметри
         parser.add_argument('--query', type=str, required=True, help='The search query')
         parser.add_argument('--year_from', type=int, help='Start year for publications')
         parser.add_argument('--year_to', type=int, help='End year for publications')
         parser.add_argument('--limit', type=int, default=100, help='Maximum number of results')
         parser.add_argument('--profile_id', type=int, help='Profile ID to associate results with')
+        parser.add_argument('--session_id', type=int, help='Session ID to associate results with')
 
-        # Додаткові параметри
         parser.add_argument('--fields_of_study', type=str, help='JSON list of fields of study')
         parser.add_argument('--publication_types', type=str, help='JSON list of publication types')
         parser.add_argument('--min_citation_count', type=int, help='Minimum citation count filter')
         parser.add_argument('--open_access_only', action='store_true', help='Only open access papers')
 
     def handle(self, *args, **options):
-        # Парсимо параметри
         query = options['query']
         year_from = options.get('year_from')
         year_to = options.get('year_to')
         limit = options.get('limit', 100)
         profile_id = options.get('profile_id')
+        session_id = options.get('session_id')
 
-        # Парсимо JSON параметри
         fields_of_study = []
         if options.get('fields_of_study'):
             try:
@@ -67,8 +66,8 @@ class Command(BaseCommand):
         logger.info(f'  Min citations: {min_citation_count}')
         logger.info(f'  Open access only: {open_access_only}')
         logger.info(f'  Profile ID: {profile_id}')
+        logger.info(f'  Session ID: {session_id}')
 
-        # Запускаємо spider з усіма параметрами
         process = CrawlerProcess(custom_settings)
         process.crawl(
             RawDataSpider,
@@ -77,6 +76,7 @@ class Command(BaseCommand):
             year_to=year_to,
             limit=limit,
             profile_id=profile_id,
+            session_id=session_id,
             fields_of_study=fields_of_study,
             publication_types=publication_types,
             min_citation_count=min_citation_count,

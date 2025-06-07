@@ -1,3 +1,4 @@
+import logging
 from django.utils import timezone
 from datetime import timedelta
 from django.db import models
@@ -13,6 +14,9 @@ from .result_serializers import ScholarRawRecordSerializer, ScholarAuthorSeriali
 from ..tasks import scrape_raw_data
 
 
+logger = logging.getLogger(__name__)
+
+
 class ResultsPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
@@ -25,9 +29,29 @@ class ScraperViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], url_path='scrape')
     def scrape(self, request):
-        """Start scraping task"""
         serializer = ScraperInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        session_id = None
+        try:
+            from dip.models import ScrapingSession
+
+            session = ScrapingSession.objects.create(
+                profile=request.user.profile if hasattr(request.user, 'profile') else None,
+                query=serializer.validated_data['query'],
+                year_from=serializer.validated_data.get('year_from'),
+                year_to=serializer.validated_data.get('year_to'),
+                limit=serializer.validated_data.get('limit', 100),
+                fields_of_study=serializer.validated_data.get('fields_of_study', []),
+                publication_types=serializer.validated_data.get('publication_types', []),
+                min_citation_count=serializer.validated_data.get('min_citation_count'),
+                open_access_only=serializer.validated_data.get('open_access_only', False),
+                status='started'
+            )
+            session_id = session.id
+
+        except Exception as e:
+            logger.warning(f"Could not create scraping session: {e}")
 
         task_params = {
             'query': serializer.validated_data['query'],
@@ -38,7 +62,8 @@ class ScraperViewSet(viewsets.ViewSet):
             'publication_types': serializer.validated_data.get('publication_types', []),
             'min_citation_count': serializer.validated_data.get('min_citation_count'),
             'open_access_only': serializer.validated_data.get('open_access_only', False),
-            'profile_id': request.user.profile.id if hasattr(request.user, 'profile') else None
+            'profile_id': request.user.profile.id if hasattr(request.user, 'profile') else None,
+            'session_id': session_id
         }
 
         task = scrape_raw_data.delay(**task_params)
@@ -46,6 +71,7 @@ class ScraperViewSet(viewsets.ViewSet):
         return Response({
             "message": "Scraping task has been initiated.",
             "task_id": task.id,
+            "session_id": session_id,
             "parameters": {
                 "query": task_params['query'],
                 "year_range": f"{task_params['year_from'] or 'Any'} - {task_params['year_to'] or 'Any'}",
@@ -61,18 +87,21 @@ class ScraperViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='filter-options')
     def get_filter_options(self, request):
-        """Get available filter options"""
         return Response(ScraperInputSerializer.get_filter_options(), status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='results')
     def get_results(self, request):
-        """Get user's scraping results with pagination and filtering"""
-        # Base queryset for user's papers
         queryset = ScholarRawRecord.objects.filter(
             profile=request.user.profile if hasattr(request.user, 'profile') else None
         ).select_related('profile').prefetch_related('authors')
 
-        # Apply filters from query parameters
+        session_id = request.query_params.get('session_id')
+        if session_id:
+            try:
+                queryset = queryset.filter(scraping_session_id=int(session_id))
+            except (ValueError, TypeError):
+                pass
+
         query = request.query_params.get('query')
         if query:
             queryset = queryset.filter(
@@ -108,7 +137,6 @@ class ScraperViewSet(viewsets.ViewSet):
         if open_access and open_access.lower() == 'true':
             queryset = queryset.filter(is_open_access=True)
 
-        # Sorting
         sort_by = request.query_params.get('sort_by', '-scraped_at')
         valid_sort_fields = [
             'publication_year', '-publication_year',
@@ -119,7 +147,6 @@ class ScraperViewSet(viewsets.ViewSet):
         if sort_by in valid_sort_fields:
             queryset = queryset.order_by(sort_by)
 
-        # Pagination
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
@@ -132,25 +159,36 @@ class ScraperViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='stats')
     def get_stats(self, request):
-        """Get statistical analysis of user's scraped data"""
         profile = request.user.profile if hasattr(request.user, 'profile') else None
+        session_id = request.query_params.get('session_id')
 
-        # Base queryset
         papers = ScholarRawRecord.objects.filter(profile=profile)
+        if session_id:
+            try:
+                papers = papers.filter(scraping_session_id=int(session_id))
+            except (ValueError, TypeError):
+                pass
 
         if not papers.exists():
             return Response({
-                "message": "No data available. Start scraping to see statistics.",
+                "message": "No data available",
                 "total_papers": 0
             })
 
-        # Basic counts
         total_papers = papers.count()
         total_authors = ScholarAuthor.objects.filter(
             scholar_raw_records__profile=profile
         ).distinct().count()
 
-        # Papers by year
+        if session_id:
+            try:
+                total_authors = ScholarAuthor.objects.filter(
+                    scholar_raw_records__profile=profile,
+                    scholar_raw_records__scraping_session_id=int(session_id)
+                ).distinct().count()
+            except (ValueError, TypeError):
+                pass
+
         papers_by_year = papers.values('publication_year').annotate(
             count=Count('id')
         ).order_by('publication_year')
@@ -161,28 +199,23 @@ class ScraperViewSet(viewsets.ViewSet):
             if item['publication_year']
         }
 
-        # Top venues
         top_venues = papers.values('venue').annotate(
             count=Count('id')
         ).filter(venue__isnull=False, venue__gt='').order_by('-count')[:10]
 
-        # Citation statistics
         citation_stats = papers.aggregate(
             total_citations=models.Sum('citation_count'),
             avg_citations=Avg('citation_count'),
             max_citations=models.Max('citation_count')
         )
 
-        # Open access statistics
         open_access_count = papers.filter(is_open_access=True).count()
         open_access_percentage = (open_access_count / total_papers * 100) if total_papers > 0 else 0
 
-        # Recent activity
         recent_papers = papers.filter(
             scraped_at__gte=timezone.now() - timedelta(days=30)
         ).count()
 
-        # Top cited papers
         top_cited = papers.order_by('-citation_count')[:5]
         top_cited_data = ScholarRawRecordSerializer(top_cited, many=True).data
 
@@ -211,27 +244,41 @@ class ScraperViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['delete'], url_path='results/clear')
     def clear_results(self, request):
-        """Clear all scraping results for the user"""
         profile = request.user.profile if hasattr(request.user, 'profile') else None
+        session_id = request.query_params.get('session_id')
 
-        deleted_count, _ = ScholarRawRecord.objects.filter(profile=profile).delete()
+        queryset = ScholarRawRecord.objects.filter(profile=profile)
+        if session_id:
+            try:
+                queryset = queryset.filter(scraping_session_id=int(session_id))
+            except (ValueError, TypeError):
+                pass
+
+        deleted_count, _ = queryset.delete()
 
         return Response({
-            "message": "All scraping results cleared successfully",
+            "message": "Results cleared successfully",
             "deleted_count": deleted_count
         }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='results/export')
     def export_results(self, request):
-        """Export results to CSV format"""
         import csv
         from django.http import HttpResponse
 
         profile = request.user.profile if hasattr(request.user, 'profile') else None
         papers = ScholarRawRecord.objects.filter(profile=profile).order_by('-scraped_at')
 
+        session_id = request.query_params.get('session_id')
+        if session_id:
+            try:
+                papers = papers.filter(scraping_session_id=int(session_id))
+            except (ValueError, TypeError):
+                pass
+
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="scholar_papers.csv"'
+        filename = f'scholar_papers_session_{session_id}.csv' if session_id else 'scholar_papers.csv'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
         writer.writerow([
