@@ -62,6 +62,7 @@ MIDDLEWARE = [
 
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'dip.middleware.AttachUserProfileMiddleware',
 ]
 
 ROOT_URLCONF = 'urls'
