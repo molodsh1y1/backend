@@ -1,8 +1,9 @@
-# dip/tasks.py - оновлена версія
 import subprocess
 import logging
 import json
 from celery import shared_task
+from django.utils import timezone
+from dip.models import ScrapingSession
 
 logger = logging.getLogger(__name__)
 
@@ -10,22 +11,26 @@ logger = logging.getLogger(__name__)
 @shared_task
 def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
                     fields_of_study=None, publication_types=None,
-                    min_citation_count=None, open_access_only=False, 
+                    min_citation_count=None, open_access_only=False,
                     profile_id=None, session_id=None):
+    session = None
+    if session_id:
+        try:
+            session = ScrapingSession.objects.get(id=session_id)
+            session.status = 'RUNNING'
+            session.task_id = scrape_raw_data.request.id
+            session.started_at = timezone.now()
+            session.save()
+        except ScrapingSession.DoesNotExist:
+            logger.error(f"Session {session_id} not found")
+
     logger.info(f"Запускаємо Scrapy з параметрами:")
     logger.info(f"  query={query}")
-    logger.info(f"  year_from={year_from}, year_to={year_to}")
-    logger.info(f"  limit={limit}")
-    logger.info(f"  fields_of_study={fields_of_study}")
-    logger.info(f"  publication_types={publication_types}")
-    logger.info(f"  min_citation_count={min_citation_count}")
-    logger.info(f"  open_access_only={open_access_only}")
-    logger.info(f"  profile_id={profile_id}")
     logger.info(f"  session_id={session_id}")
 
     cmd = ['python', 'manage.py', 'scrape_raw_data']
 
-    # Основні параметри
+    # Додаємо параметри команди...
     if query:
         cmd += ['--query', query]
     if year_from:
@@ -36,7 +41,7 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
         cmd += ['--limit', str(limit)]
     if profile_id:
         cmd += ['--profile_id', str(profile_id)]
-    if session_id:  # Передаємо session_id до команди
+    if session_id:
         cmd += ['--session_id', str(session_id)]
 
     # Додаткові параметри (передаємо як JSON)
@@ -55,18 +60,29 @@ def scrape_raw_data(query=None, year_from=None, year_to=None, limit=100,
         if result.stderr:
             logger.warning(f"[Scrapy STDERR]\n{result.stderr}")
 
+        if session:
+            session.status = 'SUCCESS'
+            session.completed_at = timezone.now()
+            session.save()
+
         return {
             "status": "success",
             "message": "Scraping completed successfully",
             "query": query,
             "profile_id": profile_id,
-            "session_id": session_id  # Повертаємо session_id в результаті
+            "session_id": session_id
         }
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Scrapy завершився з помилкою: {e.returncode}")
+        logger.error(f"Scrapy stopped with error (return code {e.returncode})")
         logger.error(f"STDOUT:\n{e.stdout}")
         logger.error(f"STDERR:\n{e.stderr}")
+
+        if session:
+            session.status = 'FAILURE'
+            session.completed_at = timezone.now()
+            session.errors_count += 1
+            session.save()
 
         return {
             "status": "error",

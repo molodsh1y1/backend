@@ -314,9 +314,9 @@ collection:
         meta:
           id: req_38080f5391b547d49aae85411ba3f142
           created: 1749324331022
-          modified: 1749325197560
+          modified: 1749367950055
           isPrivate: false
-          sortKey: -1749324331022
+          sortKey: -1749328781722
         method: GET
         headers:
           - name: User-Agent
@@ -338,14 +338,14 @@ collection:
         meta:
           id: req_5c78bc748a9d40c2b670ed012a0f1095
           created: 1749328781522
-          modified: 1749334564019
+          modified: 1749369296334
           isPrivate: false
           sortKey: -1749328781522
         method: GET
         parameters:
           - id: pair_0820226b300f40e18b6677a2e76f0ba9
             name: session_id
-            value: "36"
+            value: "136"
             disabled: false
         headers:
           - name: User-Agent
@@ -461,14 +461,12 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: "{{ _.base_url
-          }}/api/v1/scholar-raw-record/data-ready?last_check=2025-01-15T10:30:0\
-          0Z"
+      - url: "{{ _.base_url }}/api/v1/scholar-raw-record/data-ready"
         name: polling
         meta:
           id: req_3bfd8dfb91c34061addcaca2fd4d8d1b
           created: 1749333357917
-          modified: 1749334551992
+          modified: 1749368930047
           isPrivate: false
           sortKey: -1749328781572
         method: GET
@@ -477,15 +475,67 @@ collection:
         parameters:
           - id: pair_8d6237cb9790444bb1c2282546cd7783
             name: task_id
-            value: 158f10c4-6397-47b3-8208-eb5a6d14e519
+            value: 405a3363-a3a4-4a72-ba07-3f39a3de24fd
             disabled: false
           - id: pair_721ff9fa7d4c4ea89f0b844dbf75b71b
             name: session_id
-            value: "36"
+            value: "69"
+            disabled: false
+          - id: pair_bf98b5647dfb4e3e96c8f9b0f7d76eb4
+            name: last_check
+            value: 2025-01-15T10:30:00Z
             disabled: false
         headers:
           - name: Content-Type
             value: application/json
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scraping-session/"
+        name: session list
+        meta:
+          id: req_fc36fcae3b7b460da381171d71be912d
+          created: 1749368453276
+          modified: 1749368589491
+          isPrivate: false
+          sortKey: -1749328781547
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/v1/scraping-session/136/"
+        name: session detail
+        meta:
+          id: req_5dee1a521b84471bab1f2f5658e8e4e2
+          created: 1749368552866
+          modified: 1749369326779
+          isPrivate: false
+          sortKey: -1749328781534.5
+        method: GET
+        headers:
           - name: User-Agent
             value: insomnia/11.0.1
         authentication:
@@ -506,6 +556,27 @@ collection:
       created: 1749152615804
       modified: 1749152615804
       sortKey: -1749152615804
+    children:
+      - url: "{{ _.ws_url }}/session/1/"
+        name: ws session
+        meta:
+          id: ws-req_3b5f10c3943d4a738cc2fd130971e767
+          created: 1749152646350
+          modified: 1749154236755
+          sortKey: -1749152646350
+        settings:
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+        authentication:
+          type: bearer
+          prefix: Bearer
+          token: "{{ _.token }}"
+        headers:
+          - name: User-Agent
+            value: insomnia/11.0.1
 cookieJar:
   name: Default Jar
   meta:
